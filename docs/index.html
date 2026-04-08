@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIVALCE — Dashboard COMEX Embarques</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1a2235;--bd:#2a3450;--tx:#e8ecf4;--t2:#8899b4;--ac:#4f8cff;--gn:#00d4aa;--rd:#ff4d6a;--or:#ffb84d;--pu:#a78bfa}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1117,#1a2235);border-bottom:1px solid var(--bd);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;font-weight:700}.header h1 span{color:var(--ac)}
+.tabs{display:flex;gap:0;background:var(--s1);border-bottom:1px solid var(--bd);padding:0 24px}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--tx)}.tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:16px;text-align:center}
+.kpi .lb{font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:1px}
+.kpi .vl{font-family:"JetBrains Mono";font-size:20px;font-weight:600;margin-top:4px}
+.kpi .delta{font-size:11px;margin-top:3px;color:var(--t2)}
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h3{font-size:13px;color:var(--or);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--s1);color:var(--t2);padding:8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;z-index:1}
+td{padding:6px 8px;border-bottom:1px solid rgba(42,52,80,.4)}
+tr:hover{background:rgba(79,140,255,.03)}
+.mono{font-family:"JetBrains Mono";font-size:11px}
+.tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.tag-transit{background:rgba(79,140,255,.15);color:var(--ac)}
+.tag-done{background:rgba(0,212,170,.15);color:var(--gn)}
+.tag-alert{background:rgba(255,184,77,.15);color:var(--or)}
+.tag-critical{background:rgba(255,77,106,.15);color:var(--rd)}
+.milestone{display:flex;align-items:center;gap:0;margin:4px 0}
+.ms-dot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.ms-done{background:var(--gn);color:#000}
+.ms-current{background:var(--ac);color:#fff;box-shadow:0 0 8px rgba(79,140,255,.5)}
+.ms-pending{background:var(--bd);color:var(--t2)}
+.ms-line{width:20px;height:2px;flex-shrink:0}
+.ms-line-done{background:var(--gn)}
+.ms-line-pending{background:var(--bd);border-top:1px dashed var(--t2)}
+.bar-lt{height:12px;border-radius:3px;display:flex;overflow:hidden}
+.bar-fab{background:var(--ac);opacity:.8}
+.bar-trans{background:var(--gn);opacity:.8}
+.bar-desp{background:var(--or);opacity:.8}
+.hidden{display:none}
+.sr{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}.sr .lb{color:var(--t2)}.sr .vl{font-family:"JetBrains Mono";font-weight:600}
+.btn-sm{padding:6px 14px;border-radius:6px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-family:"DM Sans";font-size:12px;cursor:pointer}
+.btn-sm:hover{border-color:var(--ac);color:var(--ac)}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1><span>VIVALCE</span> — COMEX Dashboard</h1><div style="color:var(--t2);font-size:11px;margin-top:2px">Status de Embarques & Performance de Lead Time</div></div>
+  <div style="font-family:'JetBrains Mono';font-size:12px;color:var(--t2)">Actualizado: Mar 2026</div>
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="content" id="content"></div>
+
+<script>
+var D = {"embarques_2026": [{"solicitud": "2025-12-05 00:00:00", "colocacion": "2025-12-05 00:00:00", "oc": "NI-126/25", "fecha_req": "15 dias después de la\nNI-125/25", "leadtime": "2026-01-31 00:00:00", "ets": "N/A", "etd": "2026-01-23 00:00:00", "eta": "31/01/2026\n07/02/2026\n08/02/2026\n09/02/2026", "emisor": "FERMA", "fecha_fact": "2026-01-19 00:00:00", "num_fact": "517", "term": "30", "bl": "2026-01-23 00:00:00", "due": "2026-02-22 00:00:00", "productos": [{"producto": "N-206", "cant_req": 1200.0, "cant_emb": 1191.0, "precio": 3.08, "monto": 3668.28}, {"producto": "N-612B", "cant_req": 6000.0, "cant_emb": 5871.0, "precio": 2.29, "monto": 13444.59}, {"producto": "N-615B", "cant_req": 3600.0, "cant_emb": 3583.0, "precio": 2.25, "monto": 8061.75}, {"producto": "N-7410", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 2.84, "monto": 2840.0}, {"producto": "NP-2021", "cant_req": 1350.0, "cant_emb": 1350.0, "precio": 2.94, "monto": 3969.0}, {"producto": "NTL-218", "cant_req": 440.0, "cant_emb": 440.0, "precio": 1.84, "monto": 809.6}, {"producto": "N-608", "cant_req": 1200.0, "cant_emb": 1183.0, "precio": 2.46, "monto": 2910.18}]}, {"solicitud": "2025-12-05 00:00:00", "colocacion": "2025-12-05 00:00:00", "oc": "SII-127/25", "fecha_req": "ASAP", "leadtime": "2026-02-17 00:00:00", "ets": "N/A", "etd": "2026-02-05 00:00:00", "eta": "2026-02-28 00:00:00", "emisor": "SI GROUP", "fecha_fact": "2026-01-29 00:00:00", "num_fact": "9091639275", "term": "60", "bl": "2026-02-04 00:00:00", "due": "2026-04-05 00:00:00", "productos": [{"producto": "SP-134", "cant_req": 4000.0, "cant_emb": 4000.0, "precio": 2.65, "monto": 10600.0}, {"producto": "SP-103", "cant_req": 7000.0, "cant_emb": 7000.0, "precio": 2.65, "monto": 18550.0}, {"producto": "SP-1045", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 11.86, "monto": 11860.0}]}, {"solicitud": "2025-12-05 00:00:00", "colocacion": "2025-12-05 00:00:00", "oc": "SII-128/25", "fecha_req": "15 dias después de la\nNI-127/26", "leadtime": "2026-03-15 00:00:00", "ets": "N/A", "etd": "2026-02-18 00:00:00", "eta": "14/03/2026\n21/03/2026", "emisor": "SI GROUP", "fecha_fact": "2026-02-10 00:00:00", "num_fact": "9091639899", "term": "60", "bl": "2026-02-17 00:00:00", "due": "2026-04-18 00:00:00", "productos": [{"producto": "SP-134", "cant_req": 4000.0, "cant_emb": 4000.0, "precio": 2.65, "monto": 10600.0}, {"producto": "SP-103", "cant_req": 8000.0, "cant_emb": 8000.0, "precio": 2.65, "monto": 21200.0}]}, {"solicitud": "2026-01-09 00:00:00", "colocacion": "2026-01-09 00:00:00", "oc": "STR-101/26", "fecha_req": "ETA Bs As 02/03", "leadtime": "2026-03-07 00:00:00", "ets": "N/A", "etd": "2026-02-25 00:00:00", "eta": "07/03/2026\n14/03/2026\n21/03/2026", "emisor": "STRUKTOL", "fecha_fact": "2026-01-30 00:00:00", "num_fact": "A70458", "term": "90", "bl": "2026-02-23 00:00:00", "due": "2026-05-24 00:00:00", "productos": [{"producto": "40 MS", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 1.47, "monto": 1470.0}, {"producto": "EF 44", "cant_req": 2000.0, "cant_emb": 2000.0, "precio": 3.73, "monto": 7460.0}, {"producto": "RP-38", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 9.5, "monto": 9500.0}, {"producto": "TR-131", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 11.02, "monto": 11020.0}]}, {"solicitud": "2026-01-09 00:00:00", "colocacion": "2026-01-09 00:00:00", "oc": "STR-102/26", "fecha_req": "15 dias después de la STR-101/26", "leadtime": "2026-03-22 00:00:00", "ets": "N/A", "etd": "2026-03-11 00:00:00", "eta": "2026-03-28 00:00:00", "emisor": "STRUKTOL", "fecha_fact": "2026-02-13 00:00:00", "num_fact": "A70666", "term": "90", "bl": "2026-03-04 00:00:00", "due": "2026-06-02 00:00:00", "productos": [{"producto": "40 MS", "cant_req": 3000.0, "cant_emb": 3000.0, "precio": 1.47, "monto": 4410.0}, {"producto": "EF 44", "cant_req": 2000.0, "cant_emb": 2000.0, "precio": 3.73, "monto": 7460.0}, {"producto": "WB-16", "cant_req": 1000.0, "cant_emb": 1000.0, "precio": 4.01, "monto": 4010.0}]}], "embarques_2025": [{"solicitud": "2025-10-20 00:00:00", "colocacion": "2025-10-21 00:00:00", "oc": "NI-124/25", "fecha_req": "ASAP", "leadtime": "2025-12-19 00:00:00", "ets": "N/A", "etd": "2025-11-11 00:00:00", "eta": "2025-11-15 00:00:00", "emisor": "FERMA", "fecha_fact": "2025-11-04 00:00:00", "num_fact": "A513", "term": "60", "bl": "2025-11-20 00:00:00", "due": "2026-01-19 00:00:00", "productos": [{"producto": "N-2611", "cant_req": 1200.0, "cant_emb": 1200.0, "precio": 2.86, "monto": 3432.0}, {"producto": "N-612B", "cant_req": 3600.0, "cant_emb": 3587.0, "precio": 2.53, "monto": 9075.109999999999}, {"producto": "N-615B", "cant_req": 4800.0, "cant_emb": 4832.0, "precio": 2.49, "monto": 12031.68}, {"producto": "NP-2021", "cant_req": 1350.0, "cant_emb": 1350.0, "precio": 2.94, "monto": 3969.0}, {"producto": "NTL-571", "cant_req": 880.0, "cant_emb": 1350.0, "precio": 3.32, "monto": 4482.0}, {"producto": "NP-3083 (Muestra)", "cant_req": 100.0, "cant_emb": 110.0, "precio": 3.32, "monto": 365.2}]}, {"solicitud": "2025-08-25 00:00:00", "colocacion": "2025-08-26 00:00:00", "oc": "SCH-118/25", "fecha_req": "ASAP", "leadtime": "2025-11-03 00:00:00", "ets": "N/A", "etd": "2025-11-01 00:00:00", "eta": "2025-12-04 00:00:00", "emisor": "STRUKTOL", "fecha_fact": "2025-10-20 00:00:00", "num_fact": "2284804", "term": "60", "bl": "2025-11-01 00:00:00", "due": "2025-12-31 00:00:00", "productos": [{"producto": "PERMALEASE 10 LIQ", "cant_req": 0, "cant_emb": 385.0, "precio": 10.26, "monto": 3950.1}, {"producto": "KW-400", "cant_req": 400.0, "cant_emb": 400.0, "precio": 7.2, "monto": 2880.0}, {"producto": "KORESINE", "cant_req": 500.0, "cant_emb": 500.0, "precio": 10.5, "monto": 5250.0}]}, {"solicitud": "2025-09-24 00:00:00", "colocacion": "2025-09-25 00:00:00", "oc": "SII-122/25", "fecha_req": "ASAP", "leadtime": "2025-12-08 00:00:00", "ets": "N/A", "etd": "2025-11-09 00:00:00", "eta": "2025-12-06 00:00:00", "emisor": "SI GROUP", "fecha_fact": "2025-11-01 00:00:00", "num_fact": "9091631997", "term": "60", "bl": "2025-11-11 00:00:00", "due": "2026-01-10 00:00:00", "productos": [{"producto": "SP-134", "cant_req": 7000.0, "cant_emb": 7000.0, "precio": 2.59, "monto": 18130.0}, {"producto": "SP-103", "cant_req": 4000.0, "cant_emb": 4000.0, "precio": 2.59, "monto": 10360.0}, {"producto": "SP-1045", "cant_req": 500.0, "cant_emb": 500.0, "precio": 11.86, "monto": 5930.0}]}, {"solicitud": "2025-12-05 00:00:00", "colocacion": "2025-12-05 00:00:00", "oc": "NI-125/25", "fecha_req": "ASAP", "leadtime": "2026-01-23 00:00:00", "ets": "N/A", "etd": "2025-12-26 00:00:00", "eta": "2026-01-11 00:00:00", "emisor": "FERMA", "fecha_fact": "2025-12-22 00:00:00", "num_fact": "A516", "term": "60", "bl": "", "due": "", "productos": [{"producto": "N-612B", "cant_req": 3600.0, "cant_emb": 3600.0, "precio": 2.86, "monto": 10296.0}, {"producto": "N-615B", "cant_req": 2400.0, "cant_emb": 2400.0, "precio": 2.53, "monto": 6071.999999999999}, {"producto": "NP-2021", "cant_req": 1350.0, "cant_emb": 1350.0, "precio": 2.49, "monto": 3361.5000000000005}, {"producto": "NTL-218", "cant_req": 440.0, "cant_emb": 440.0, "precio": 2.94, "monto": 1293.6}, {"producto": "NTL-571", "cant_req": 3960.0, "cant_emb": 3960.0, "precio": 3.32, "monto": 13147.199999999999}]}], "performance": [{"oc": "NI-124/25", "proveedor": "FERMA", "origen": "China", "oc_date": "22/11/25", "etd": "18/11/25", "eta": "21/11/25", "planta": "2025-04-12 00:00:00", "lt_total": 44, "fabricacion": 21, "transito": 4, "despacho": 19, "objetivo": 70, "desvio": -26, "status": "✅ On-Time"}, {"oc": "SCH-118/25", "proveedor": "STRUKTOL", "origen": "Alemania", "oc_date": "20/09/25", "etd": "25/10/25", "eta": "2025-05-12 00:00:00", "planta": "15/12/25", "lt_total": 111, "fabricacion": 67, "transito": 33, "despacho": 11, "objetivo": 70, "desvio": 41, "status": "🔴 Excedido (+41d)"}, {"oc": "SII-122/25", "proveedor": "SI GROUP", "origen": "India", "oc_date": "21/10/25", "etd": "14/11/25", "eta": "2025-07-12 00:00:00", "planta": "2025-11-12 00:00:00", "lt_total": 77, "fabricacion": 45, "transito": 27, "despacho": 5, "objetivo": 70, "desvio": 7, "status": "⚠️ Leve (+7d)"}, {"oc": "NI-125/25", "proveedor": "FERMA", "origen": "China", "oc_date": "2025-03-12 00:00:00", "etd": "13/12/25", "eta": "2026-02-01 00:00:00", "planta": "15/01/26", "lt_total": 42, "fabricacion": 21, "transito": 16, "despacho": 5, "objetivo": 70, "desvio": -28, "status": "✅ On-Time"}, {"oc": "NI-126/25", "proveedor": "FERMA", "origen": "China", "oc_date": "2025-03-12 00:00:00", "etd": "17/01/26", "eta": "2026-09-02 00:00:00", "planta": "18/02/26", "lt_total": 69, "fabricacion": 49, "transito": 20, "despacho": 0, "objetivo": 70, "desvio": -1, "status": "✅ On-Time"}, {"oc": "SII-127/25", "proveedor": "SI GROUP", "origen": "India", "oc_date": "2025-03-12 00:00:00", "etd": "2026-06-02 00:00:00", "eta": "2026-09-03 00:00:00", "planta": "16/03/26", "lt_total": 90, "fabricacion": 62, "transito": 28, "despacho": 0, "objetivo": 70, "desvio": 20, "status": "🔴 Excedido (+20d)"}], "snapshots": [{"oc": "NI-126/25", "year": "2026", "proveedor": "FERMA", "etas": "31/01/2026\n07/02/2026\n08/02/2026\n09/02/2026", "eta_orig": "31/01/2026", "eta_last": "2026-09-02 00:00:00", "desvio": 9, "status": "Cumplida"}, {"oc": "SII-127/25", "year": "2026", "proveedor": "SI GROUP", "etas": "2026-09-03 00:00:00", "eta_orig": "2026-09-03 00:00:00", "eta_last": "2026-09-03 00:00:00", "desvio": 0, "status": "Cumplida"}, {"oc": "SII-128/25", "year": "2026", "proveedor": "SI GROUP", "etas": "14/03/2026\n21/03/2026", "eta_orig": "14/03/2026", "eta_last": "21/03/2026", "desvio": 7, "status": "En Tránsito"}, {"oc": "STR-101/26", "year": "2026", "proveedor": "STRUKTOL", "etas": "07/03/2026\n14/03/2026\n21/03/2026", "eta_orig": "2026-07-03 00:00:00", "eta_last": "21/03/2026", "desvio": 14, "status": "En Tránsito"}, {"oc": "STR-102/26", "year": "2026", "proveedor": "STRUKTOL", "etas": "20/03/2026", "eta_orig": "20/03/2026", "eta_last": "20/03/2026", "desvio": 0, "status": "En Tránsito"}, {"oc": "NI-124/25", "year": "2025", "proveedor": "FERMA", "etas": "21/11/2025", "eta_orig": "21/11/2025", "eta_last": "21/11/2025", "desvio": 0, "status": "Cumplida"}, {"oc": "SCH-118/25", "year": "2025", "proveedor": "STRUKTOL", "etas": "2025-05-12 00:00:00", "eta_orig": "2025-05-12 00:00:00", "eta_last": "2025-05-12 00:00:00", "desvio": 0, "status": "Cumplida"}, {"oc": "SII-122/25", "year": "2025", "proveedor": "SI GROUP", "etas": "2025-07-12 00:00:00", "eta_orig": "2025-07-12 00:00:00", "eta_last": "2025-07-12 00:00:00", "desvio": 0, "status": "Cumplida"}, {"oc": "NI-125/25", "year": "2025", "proveedor": "FERMA", "etas": "2026-02-01 00:00:00", "eta_orig": "2026-02-01 00:00:00", "eta_last": "2026-02-01 00:00:00", "desvio": 0, "status": "Cumplida"}], "alert_emails": ["cecilia@recsa-pu.com.ar", "viviana@vivalce.com.ar", "gabypoblet@isanmarketing.com"]};
+
+function fmt(n){return Math.abs(n).toLocaleString("es-AR",{maximumFractionDigits:0})}
+function fmtD(n){return n.toFixed(2)}
+
+var currentTab = "status";
+var tabNames = [
+  {id:"status",label:"Status Embarques"},
+  {id:"alertas",label:"Alertas"},
+  {id:"performance",label:"Performance"},
+  {id:"historial",label:"Historial"}
+];
+
+function renderTabs(){
+  var h = "";
+  for(var i=0;i<tabNames.length;i++){
+    var t = tabNames[i];
+    var ac = currentTab===t.id?" active":"";
+    h += "<div class=\"tab"+ac+"\" data-tab=\""+t.id+"\">"+t.label+"</div>";
+  }
+  document.getElementById("tabs").innerHTML = h;
+  var tabEls = document.getElementById("tabs").getElementsByClassName("tab");
+  for(var j=0;j<tabEls.length;j++){
+    tabEls[j].addEventListener("click", function(){switchTab(this.getAttribute("data-tab"))});
+  }
+}
+
+function switchTab(id){currentTab=id;renderTabs();renderContent();}
+function renderContent(){
+  if(currentTab==="status") renderStatus();
+  else if(currentTab==="alertas") renderAlertas();
+  else if(currentTab==="performance") renderPerformance();
+  else if(currentTab==="historial") renderHistorial();
+}
+
+function getStatus(oc){
+  for(var i=0;i<D.snapshots.length;i++){
+    if(D.snapshots[i].oc===oc) return D.snapshots[i].status;
+  }
+  return "Desconocido";
+}
+
+function getDesvio(oc){
+  for(var i=0;i<D.snapshots.length;i++){
+    if(D.snapshots[i].oc===oc) return D.snapshots[i].desvio;
+  }
+  return 0;
+}
+
+function statusTag(st){
+  if(st.indexOf("Cumplida")>=0) return '<span class="tag tag-done">Cumplida</span>';
+  if(st.indexOf("nsito")>=0) return '<span class="tag tag-transit">En Transito</span>';
+  return '<span class="tag tag-alert">'+st+'</span>';
+}
+
+function milestones(oc){
+  var st = getStatus(oc);
+  var done = st.indexOf("Cumplida")>=0;
+  var transit = st.indexOf("nsito")>=0;
+  var steps = ["OC","Fact","Emb","Trans","Arrib","Desp","Planta"];
+  var activeIdx = done ? 7 : (transit ? 3 : 1);
+  var h = '<div class="milestone">';
+  for(var i=0;i<steps.length;i++){
+    var cls = i<activeIdx?"ms-done":(i===activeIdx?"ms-current":"ms-pending");
+    h += '<div class="ms-dot '+cls+'" title="'+steps[i]+'"></div>';
+    if(i<steps.length-1){
+      var lcls = i<activeIdx?"ms-line-done":"ms-line-pending";
+      h += '<div class="ms-line '+lcls+'"></div>';
+    }
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderStatus(){
+  var embs = D.embarques_2026;
+  var totalUSD = 0;
+  var inTransit = 0;
+  var completed = 0;
+  var alerts = 0;
+  
+  for(var i=0;i<embs.length;i++){
+    var total = 0;
+    for(var j=0;j<embs[i].productos.length;j++) total += embs[i].productos[j].monto;
+    totalUSD += total;
+    var st = getStatus(embs[i].oc);
+    if(st.indexOf("nsito")>=0) inTransit++;
+    if(st.indexOf("Cumplida")>=0) completed++;
+    if(getDesvio(embs[i].oc) > 0) alerts++;
+  }
+  
+  var h = '<div class="kpis">';
+  h += '<div class="kpi"><div class="lb">Embarques 2026</div><div class="vl">'+embs.length+'</div><div class="delta">'+inTransit+' en transito / '+completed+' cumplidas</div></div>';
+  h += '<div class="kpi"><div class="lb">Monto Total USD</div><div class="vl" style="color:var(--ac)">USD '+fmt(totalUSD)+'</div><div class="delta">5 OCs con facturas</div></div>';
+  h += '<div class="kpi"><div class="lb">En Transito</div><div class="vl" style="color:var(--or)">'+inTransit+'</div><div class="delta">Embarques en curso</div></div>';
+  h += '<div class="kpi"><div class="lb">Alertas ETA</div><div class="vl" style="color:var(--rd)">'+alerts+'</div><div class="delta">Cambios de fecha detectados</div></div>';
+  h += '<div class="kpi"><div class="lb">On-Time Rate</div><div class="vl" style="color:'+(completed>inTransit?'var(--gn)':'var(--or)')+'">50%</div><div class="delta">3 de 6 on-time</div></div>';
+  h += '</div>';
+  
+  // Milestones map
+  h += '<div class="card"><h3>Mapa de Milestones</h3>';
+  h += '<table><thead><tr><th>O.C.</th><th>Proveedor</th><th>Progreso</th><th>ETD</th><th>ETA</th><th>Monto USD</th><th>Status</th><th>Alerta</th></tr></thead><tbody>';
+  for(var i=0;i<embs.length;i++){
+    var e = embs[i];
+    var total = 0;
+    for(var j=0;j<e.productos.length;j++) total += e.productos[j].monto;
+    var st = getStatus(e.oc);
+    var desv = getDesvio(e.oc);
+    var alertTag = desv > 10 ? '<span class="tag tag-critical">+'+desv+'d</span>' : (desv > 0 ? '<span class="tag tag-alert">+'+desv+'d</span>' : '<span style="color:var(--gn)">OK</span>');
+    h += '<tr><td class="mono" style="font-weight:600">'+e.oc+'</td><td>'+e.emisor+'</td><td>'+milestones(e.oc)+'</td><td class="mono">'+e.etd.substring(0,10)+'</td><td class="mono">'+e.eta.substring(0,10)+'</td><td class="mono" style="text-align:right">'+fmt(total)+'</td><td>'+statusTag(st)+'</td><td>'+alertTag+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Detail per embarque
+  h += '<div class="card"><h3>Detalle por Embarque — Productos</h3>';
+  for(var i=0;i<embs.length;i++){
+    var e = embs[i];
+    var total = 0;
+    for(var j=0;j<e.productos.length;j++) total += e.productos[j].monto;
+    h += '<div style="margin-bottom:16px;padding:12px;background:var(--s1);border-radius:8px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    h += '<div><span class="mono" style="font-weight:700;font-size:14px">'+e.oc+'</span> <span style="color:var(--t2)">'+e.emisor+'</span> '+statusTag(getStatus(e.oc))+'</div>';
+    h += '<div class="mono" style="color:var(--ac)">USD '+fmt(total)+' | Term: '+e.term+'</div></div>';
+    h += '<table><thead><tr><th>Producto</th><th style="text-align:right">Cant. Req.</th><th style="text-align:right">Cant. Emb.</th><th style="text-align:right">Precio USD</th><th style="text-align:right">Monto USD</th><th>Cumpl.</th></tr></thead><tbody>';
+    for(var j=0;j<e.productos.length;j++){
+      var p = e.productos[j];
+      var cumpl = p.cant_req > 0 ? (p.cant_emb / p.cant_req * 100).toFixed(0) : "—";
+      var cColor = cumpl === "100" ? "var(--gn)" : (parseFloat(cumpl) > 95 ? "var(--or)" : "var(--rd)");
+      h += '<tr><td style="font-weight:500">'+p.producto+'</td><td class="mono" style="text-align:right">'+fmt(p.cant_req)+'</td><td class="mono" style="text-align:right">'+fmt(p.cant_emb)+'</td><td class="mono" style="text-align:right">'+fmtD(p.precio)+'</td><td class="mono" style="text-align:right">'+fmt(p.monto)+'</td><td class="mono" style="color:'+cColor+'">'+cumpl+'%</td></tr>';
+    }
+    h += '</tbody></table></div>';
+  }
+  h += '</div>';
+  document.getElementById("content").innerHTML = h;
+}
+
+function renderAlertas(){
+  var h = '<div class="card"><h3>Alertas de Cambio de ETA</h3>';
+  h += '<p style="color:var(--t2);font-size:12px;margin-bottom:12px">Embarques con cambios de fecha detectados via snapshot</p>';
+  h += '<table><thead><tr><th>O.C.</th><th>Proveedor</th><th>ETAs Registradas</th><th>ETA Original</th><th>ETA Ultima</th><th>Desvio</th><th>Status</th></tr></thead><tbody>';
+  
+  var sorted = D.snapshots.slice().sort(function(a,b){return b.desvio - a.desvio});
+  for(var i=0;i<sorted.length;i++){
+    var s = sorted[i];
+    var dColor = s.desvio > 10 ? "var(--rd)" : (s.desvio > 0 ? "var(--or)" : "var(--gn)");
+    var dTag = s.desvio > 10 ? '<span class="tag tag-critical">CRITICO +'+s.desvio+'d</span>' : (s.desvio > 0 ? '<span class="tag tag-alert">+'+s.desvio+'d</span>' : '<span style="color:var(--gn)">Sin desvio</span>');
+    var etas = s.etas.replace(/\n/g, " → ");
+    h += '<tr><td class="mono" style="font-weight:600">'+s.oc+'</td><td>'+s.proveedor+'</td><td class="mono" style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+etas+'</td><td class="mono">'+s.eta_orig.substring(0,10)+'</td><td class="mono">'+s.eta_last.substring(0,10)+'</td><td>'+dTag+'</td><td>'+statusTag(s.status)+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  // Notification config
+  h += '<div class="card"><h3>Configuracion de Notificaciones</h3>';
+  h += '<p style="color:var(--t2);font-size:12px;margin-bottom:12px">Cuando se detecta un cambio de ETA o status, se envia email a:</p>';
+  for(var i=0;i<D.alert_emails.length;i++){
+    h += '<div class="sr"><span class="lb">'+D.alert_emails[i]+'</span><span class="vl" style="color:var(--gn)">Activo</span></div>';
+  }
+  h += '<div style="margin-top:12px;padding:8px;background:rgba(79,140,255,.1);border-radius:6px;font-size:11px;color:var(--ac)">Las notificaciones se envian automaticamente al actualizar la planilla via el Skill de Claude</div>';
+  h += '</div>';
+  
+  document.getElementById("content").innerHTML = h;
+}
+
+function renderPerformance(){
+  var perf = D.performance;
+  var h = '<div class="kpis" style="grid-template-columns:repeat(4,1fr)">';
+  
+  // Calculate averages
+  var totalLT=0,bestLT=999,worstLT=0,onTime=0;
+  for(var i=0;i<perf.length;i++){
+    totalLT+=perf[i].lt_total;
+    if(perf[i].lt_total<bestLT) bestLT=perf[i].lt_total;
+    if(perf[i].lt_total>worstLT) worstLT=perf[i].lt_total;
+    if(perf[i].desvio<=0) onTime++;
+  }
+  var avgLT = perf.length>0?Math.round(totalLT/perf.length):0;
+  
+  h += '<div class="kpi"><div class="lb">LT Promedio</div><div class="vl" style="color:'+(avgLT<=70?'var(--gn)':'var(--or)')+'">'+avgLT+' dias</div><div class="delta">Objetivo: 70 dias</div></div>';
+  h += '<div class="kpi"><div class="lb">Mejor LT</div><div class="vl" style="color:var(--gn)">'+bestLT+' dias</div></div>';
+  h += '<div class="kpi"><div class="lb">Peor LT</div><div class="vl" style="color:var(--rd)">'+worstLT+' dias</div></div>';
+  h += '<div class="kpi"><div class="lb">On-Time Rate</div><div class="vl" style="color:'+(onTime/perf.length>=0.7?'var(--gn)':'var(--or)')+'">'+Math.round(onTime/perf.length*100)+'%</div><div class="delta">'+onTime+' de '+perf.length+' on-time</div></div>';
+  h += '</div>';
+  
+  // Detail table
+  h += '<div class="card"><h3>Descomposicion del Lead Time por Embarque</h3>';
+  h += '<table><thead><tr><th>O.C.</th><th>Proveedor</th><th>Origen</th><th style="text-align:right">Fabricacion</th><th style="text-align:right">Transito</th><th style="text-align:right">Despacho</th><th style="text-align:right">LT Total</th><th>Objetivo</th><th>Desvio</th><th>Status</th><th>Barra</th></tr></thead><tbody>';
+  
+  for(var i=0;i<perf.length;i++){
+    var p = perf[i];
+    var maxBar = 120;
+    var scale = maxBar / (worstLT > 0 ? worstLT : 1);
+    var fabW = Math.round(p.fabricacion * scale);
+    var transW = Math.round(p.transito * scale);
+    var despW = Math.round(p.despacho * scale);
+    var stColor = p.desvio <= 0 ? "var(--gn)" : (p.desvio <= 10 ? "var(--or)" : "var(--rd)");
+    var stTag = p.desvio <= 0 ? '<span class="tag tag-done">On-Time</span>' : (p.desvio <= 10 ? '<span class="tag tag-alert">+'+p.desvio+'d</span>' : '<span class="tag tag-critical">+'+p.desvio+'d</span>');
+    
+    h += '<tr><td class="mono" style="font-weight:600">'+p.oc+'</td><td>'+p.proveedor+'</td><td style="font-size:10px;color:var(--t2)">'+p.origen+'</td>';
+    h += '<td class="mono" style="text-align:right">'+p.fabricacion+'d</td>';
+    h += '<td class="mono" style="text-align:right">'+p.transito+'d</td>';
+    h += '<td class="mono" style="text-align:right">'+p.despacho+'d</td>';
+    h += '<td class="mono" style="text-align:right;font-weight:700;color:'+stColor+'">'+p.lt_total+'d</td>';
+    h += '<td class="mono">'+p.objetivo+'d</td>';
+    h += '<td class="mono" style="color:'+stColor+'">'+p.desvio+'d</td>';
+    h += '<td>'+stTag+'</td>';
+    h += '<td><div class="bar-lt" style="width:'+maxBar+'px"><div class="bar-fab" style="width:'+fabW+'px" title="Fab: '+p.fabricacion+'d"></div><div class="bar-trans" style="width:'+transW+'px" title="Trans: '+p.transito+'d"></div><div class="bar-desp" style="width:'+despW+'px" title="Desp: '+p.despacho+'d"></div></div></td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  h += '<div style="margin-top:8px;display:flex;gap:16px;font-size:10px;color:var(--t2)"><span><span style="display:inline-block;width:10px;height:10px;background:var(--ac);border-radius:2px;opacity:.8"></span> Fabricacion</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--gn);border-radius:2px;opacity:.8"></span> Transito</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--or);border-radius:2px;opacity:.8"></span> Despacho</span></div>';
+  h += '</div>';
+  
+  // By provider summary
+  h += '<div class="card"><h3>Promedio por Proveedor</h3><table><thead><tr><th>Proveedor</th><th>Origen</th><th># Emb</th><th style="text-align:right">LT Prom</th><th style="text-align:right">Fab Prom</th><th style="text-align:right">Trans Prom</th><th style="text-align:right">Desp Prom</th><th>On-Time %</th><th>Cuello Botella</th></tr></thead><tbody>';
+  var byProv = {};
+  for(var i=0;i<perf.length;i++){
+    var p = perf[i];
+    if(!byProv[p.proveedor]) byProv[p.proveedor] = {origen:p.origen,n:0,lt:0,fab:0,trans:0,desp:0,ot:0};
+    byProv[p.proveedor].n++;
+    byProv[p.proveedor].lt+=p.lt_total;
+    byProv[p.proveedor].fab+=p.fabricacion;
+    byProv[p.proveedor].trans+=p.transito;
+    byProv[p.proveedor].desp+=p.despacho;
+    if(p.desvio<=0) byProv[p.proveedor].ot++;
+  }
+  var provs = Object.keys(byProv);
+  for(var i=0;i<provs.length;i++){
+    var k=provs[i];var d=byProv[k];
+    var avgLt=Math.round(d.lt/d.n);var avgFab=Math.round(d.fab/d.n);var avgTr=Math.round(d.trans/d.n);var avgDe=Math.round(d.desp/d.n);
+    var otPct=Math.round(d.ot/d.n*100);
+    var bottleneck = avgFab>=avgTr && avgFab>=avgDe ? "Fabricacion" : (avgTr>=avgDe ? "Transito" : "Despacho");
+    var ltColor = avgLt<=70?"var(--gn)":"var(--rd)";
+    h += '<tr><td style="font-weight:600">'+k+'</td><td style="color:var(--t2)">'+d.origen+'</td><td class="mono">'+d.n+'</td><td class="mono" style="text-align:right;color:'+ltColor+'">'+avgLt+'d</td><td class="mono" style="text-align:right">'+avgFab+'d</td><td class="mono" style="text-align:right">'+avgTr+'d</td><td class="mono" style="text-align:right">'+avgDe+'d</td><td class="mono" style="color:'+(otPct>=70?'var(--gn)':'var(--or)')+'">'+otPct+'%</td><td style="font-size:11px;color:var(--or)">'+bottleneck+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  
+  document.getElementById("content").innerHTML = h;
+}
+
+function renderHistorial(){
+  var all = D.embarques_2025.concat(D.embarques_2026);
+  var h = '<div class="card"><h3>Historial Completo de Embarques 2025-2026</h3>';
+  h += '<table><thead><tr><th>O.C.</th><th>Proveedor</th><th>Productos</th><th style="text-align:right">Cant. Req.</th><th style="text-align:right">Cant. Emb.</th><th>ETD</th><th>ETA</th><th style="text-align:right">Monto USD</th><th>Term</th><th>Factura</th><th>Vto.</th></tr></thead><tbody>';
+  
+  for(var i=0;i<all.length;i++){
+    var e = all[i];
+    var prods = [];
+    var totalReq=0, totalEmb=0, totalMonto=0;
+    for(var j=0;j<e.productos.length;j++){
+      prods.push(e.productos[j].producto);
+      totalReq += e.productos[j].cant_req;
+      totalEmb += e.productos[j].cant_emb;
+      totalMonto += e.productos[j].monto;
+    }
+    h += '<tr><td class="mono" style="font-weight:600">'+e.oc+'</td><td>'+e.emisor+'</td><td style="font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+prods.join(", ")+'</td><td class="mono" style="text-align:right">'+fmt(totalReq)+'</td><td class="mono" style="text-align:right">'+fmt(totalEmb)+'</td><td class="mono">'+e.etd.substring(0,10)+'</td><td class="mono">'+e.eta.substring(0,10)+'</td><td class="mono" style="text-align:right">'+fmt(totalMonto)+'</td><td class="mono">'+e.term+'</td><td class="mono" style="font-size:10px">'+e.num_fact+'</td><td class="mono" style="font-size:10px">'+e.due.substring(0,10)+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  document.getElementById("content").innerHTML = h;
+}
+
+// INIT
+renderTabs();
+renderContent();
+</script>
+</body>
+</html>
